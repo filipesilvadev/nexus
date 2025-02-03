@@ -104,7 +104,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📬 Contact
 
-Project Maintainer - [@YourTwitter](https://twitter.com/yourtwitter)
+Project Maintainer - [Digital Estúdio](https://digitalestudio.com.br)
 
 Project Link: [https://github.com/filipesilvadev/nexus](https://github.com/filipesilvadev/nexus)
 
