@@ -1,85 +1,112 @@
-# AppFlowy Builder
+# Nexus - Church Professional Network 🤝
 
-AppFlowy Builder is a tool designed to streamline the process of building and deploying AppFlowy applications across multiple platforms. This document outlines the necessary steps and requirements to use this tool effectively.
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?logo=flutter)](https://flutter.dev)
+[![Firebase](https://img.shields.io/badge/Firebase-Enabled-FFCA28?logo=firebase)](https://firebase.google.com)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-## Getting Started
+Connect with trusted professionals from your church community
 
-Before you begin, ensure you have the required secrets set in your repository settings. These secrets are essential for the workflows to operate correctly. For guidance on creating secrets, see [GitHub's documentation on using secrets in GitHub Actions](https://docs.github.com/en/actions/security-guides/using-secrets-in-github-actions).
+## 📱 About Nexus
 
-### Requirements for iOS
+Nexus is a private professional network application designed exclusively for church members. It enables the congregation to:
 
-To build for iOS, set the following secrets in your repository:
+- 🔍 Find trusted professionals within the church community
+- 💼 Create and manage professional profiles
+- 📊 Track profile engagement metrics
+- 🤝 Connect with other church members professionally
+- 📨 Invite-only system to ensure community trust
 
-- `IOS_CERTIFICATE_BASE64`
-- `IOS_KEYCHAIN_PASSWORD`
-- `IOS_PROVISION_PROFILE_BASE64`
-- `P12_PASSWORD`
+## ✨ Key Features
 
-For instructions on creating these secrets, refer to [GitHub's guide on deploying Xcode applications](https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development).
+- **Secure Authentication**
+  - Email-based invitation system
+  - Verified church member access only
+  - Secure login and profile management
 
-### Requirements for Android
+- **Professional Profiles**
+  - Detailed service descriptions
+  - Contact information
+  - Service categories
+  - Engagement metrics
 
-To build for Android, set the following secrets:
+- **Smart Search**
+  - Search by profession
+  - Filter by service category
+  - Direct professional contact
+  - Easy navigation
 
-- `ANDROID_UPLOAD_KEYSTORE`
-- `ANDROID_UPLOAD_KEYSTORE_KEY_PASSWORD`
-- `ANDROID_UPLOAD_KEYSTORE_STORE_PASSWORD`
+## 🚀 Getting Started
 
-For instructions on creating these secrets, see [Flutter's deployment guide for Android](https://docs.flutter.dev/deployment/android#sign-the-app).
+### Prerequisites
 
-### Requirements for macOS
+- Flutter SDK (3.0.0 or higher)
+- Firebase account
+- IDE (VS Code, Android Studio, or similar)
 
-To build for macOS, set the following secrets:
+### Installation
 
-- `MACOS_CERTIFICATE_BASE64`
-- `MACOS_CODESIGN_ID`
-
-Refer to [GitHub's guide on deploying Xcode applications](https://docs.github.com/en/actions/deployment/deploying-xcode-applications/installing-an-apple-certificate-on-macos-runners-for-xcode-development) for details.
-
-Optional secrets for macOS:
-
-- `MACOS_NOTARY_PWD`
-- `MACOS_NOTARY_USER`
-- `MACOS_TEAM_ID`
-
-For instructions on creating these secrets, see [this guide on notarizing a command-line tool with NotaryTool](https://scriptingosx.com/2021/07/notarize-a-command-line-tool-with-notarytool).
-
-Example command for macOS notarization:
-
-```sh
-xcrun notarytool submit AppFlowy.dmg --apple-id [YOUR_APPLE_ID] --team-id [YOUR_TEAM_ID] --password [YOUR_APPLE_APP_SPECIFIC_PASSWORD] -v -f "json" --wait
+1. Clone the repository:
+```bash
+git clone https://github.com/yourusername/nexus.git
+cd nexus
 ```
 
-## How to use
-
-> [!CAUTION]
-> Remember, all packages are zipped. Ensure to **unzip** them before use.
-
-- Navigate to the `Actions` tab in your repository.
-- Select the workflow you wish to run.
-- Click the `Run workflow` button.
-- Enter the required variables as prompted.
-
-## Release packages
-
-> [!CAUTION]
-> The following steps are only for the AppFlowy team. If you are a contributor, please ignore this section.
-
-- To begin the release process, clone the `AppFlowy-Builder` repository to your local machine using the following command:
-
-```shell
-git clone git@github.com:AppFlowy-IO/AppFlowy-Builder.git
+2. Install dependencies:
+```bash
+flutter pub get
 ```
 
-After cloning the repository, you can initiate the build process by creating a new tag and pushing it to the repository. Here's how to do it:
-
-```shell
-git tag -a 0.0.1_main && git push origin 0.0.1_main
+3. Configure Firebase:
+```bash
+flutterfire configure
 ```
 
-This action triggers the build process, which utilizes the main branch to compile the AppFlowy desktop application. The build will include the latest commit from the specified branch.
+4. Run the application:
+```bash
+flutter run
+```
 
-You can monitor the progress and status of the build process [here](https://github.com/AppFlowy-IO/AppFlowy-Builder/actions).
+## 🛠️ Technical Stack
 
-> * Stage (Staging): This is a pre-production environment used for testing. After development, the code is deployed to this environment to simulate how it would work in the production environment.
-> * Prod (Production): This is the live environment where the application runs for the end-users.
+- **Frontend**: Flutter/Dart
+- **Backend**: Firebase
+  - Authentication
+  - Cloud Firestore
+  - Cloud Functions
+- **State Management**: Provider
+- **Design Pattern**: MVVM Architecture
+
+## 📈 Project Structure
+
+```
+lib/
+├── main.dart
+├── services/
+│   ├── auth_service.dart
+│   ├── profile_service.dart
+│   └── invite_service.dart
+├── screens/
+│   ├── auth/
+│   ├── home/
+│   └── profile/
+├── models/
+└── widgets/
+```
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 📬 Contact
+
+Project Maintainer - [@YourTwitter](https://twitter.com/yourtwitter)
+
+Project Link: [https://github.com/yourusername/nexus](https://github.com/yourusername/nexus)
+
+---
+Built with ❤️ for the church community
