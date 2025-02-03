@@ -1,0 +1,204 @@
+name: Build AppFlowy Android
+
+on:
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: "Repo"
+        required: true
+        default: "AppFlowy-IO/AppFlowy"
+      branch:
+        description: "Branch"
+        required: true
+        default: "main"
+      build_name:
+        description: "Build Version (it should match the version in pubspec.yaml)"
+        required: true
+        default: "0.8.2"
+      build_number:
+        description: "Build Number (it should be unique)"
+        required: true
+        default: "2908201"
+      build_type:
+        type: choice
+        description: "Build Type"
+        required: true
+        options:
+          - "apk"
+          - "appbundle"
+      internal_build:
+        type: choice
+        description: "Internal Build Type (1 for internal, 0 for external)"
+        required: true
+        default: "1"
+        options:
+          - 0
+          - 1
+
+env:
+  FLUTTER_VERSION: "3.22.3"
+  RUST_TOOLCHAIN: "1.80.1"
+
+jobs:
+  build:
+    strategy:
+      fail-fast: true
+      matrix:
+        os: [ubuntu-latest]
+        include:
+          - os: ubuntu-latest
+            target: aarch64-linux-android
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      # the following step is required to avoid running out of space
+      - name: Maximize build space
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+
+      - name: Checkout source code
+        uses: actions/checkout@v2
+        with:
+          repository: ${{ github.event.inputs.repo }}
+          ref: ${{ github.event.inputs.branch }}
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: "temurin" # See 'Supported distributions' for available options
+          java-version: "17"
+
+      - name: Install Rust toolchain
+        id: rust_toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ env.RUST_TOOLCHAIN }}
+          target: ${{ matrix.target }}
+          override: true
+          profile: minimal
+
+      - name: Install flutter
+        id: flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - uses: nttld/setup-ndk@v1
+        id: setup-ndk
+        with:
+          ndk-version: "r26d"
+          add-to-path: true
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          prefix-key: ${{ matrix.os }}
+          workspaces: |
+            frontend/rust-lib
+
+      - uses: davidB/rust-cargo-make@v1
+        with:
+          version: "0.37.5"
+
+      - name: Install prerequisites
+        working-directory: frontend
+        run: |
+          rustup target install aarch64-linux-android
+          cargo install duckscript_cli --force --locked
+          cargo install --version 3.3.0 cargo-ndk --locked
+          sudo wget -qO /etc/apt/trusted.gpg.d/dart_linux_signing_key.asc https://dl-ssl.google.com/linux/linux_signing_key.pub
+          sudo wget -qO /etc/apt/sources.list.d/dart_stable.list https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list
+          sudo apt-get update
+          sudo apt-get install -y dart curl build-essential libssl-dev clang cmake ninja-build pkg-config libgtk-3-dev
+          sudo apt-get install keybinder-3.0 libnotify-dev
+          sudo apt-get install gcc-multilib
+          sudo apt-get -y install libmpv-dev mpv
+          cargo make appflowy-flutter-deps-tools
+        shell: bash
+
+      - name: Generate env file
+        working-directory: frontend/appflowy_flutter
+        run: |
+          echo "INTERNAL_BUILD=${{ github.env.inputs.internal_build }}" >> .env
+          echo "SENTRY_DSN=${{ secrets.SENTRY_DSN }}" >> .env
+        shell: bash
+
+      - name: Configure release sign
+        working-directory: frontend/appflowy_flutter/android/app
+        run: |
+          # replace signingConfig signingConfigs.debug with signingConfig signingConfigs.release
+          sed -i 's/signingConfig signingConfigs.debug/signingConfig signingConfigs.release/g' build.gradle
+
+      - name: Configure key.properties
+        working-directory: frontend/appflowy_flutter/android
+        run: |
+          echo "${{ secrets.ANDROID_UPLOAD_KEYSTORE_BASE64 }}" | base64 --decode > app/upload-keystore.jks
+          echo -e "storePassword=${{ secrets.ANDROID_UPLOAD_KEYSTORE_STORE_PASSWORD }}\nkeyPassword=${{ secrets.ANDROID_UPLOAD_KEYSTORE_KEY_PASSWORD }}\nkeyAlias=upload\nstoreFile=upload-keystore.jks" > key.properties
+        shell: bash
+
+      - name: Build AppFlowy
+        working-directory: frontend
+        env:
+          ANDROID_NDK_HOME: ${{ steps.setup-ndk.outputs.ndk-path }}
+        run: |
+          cargo make --profile production-android appflowy-core-dev-android
+          cargo make --profile production-android code_generation
+
+          cd appflowy_flutter
+          if [ ${{github.event.inputs.build_type}} = "apk" ]; then
+            flutter build apk --build-name ${{ github.event.inputs.build_name }} --build-number ${{ github.event.inputs.build_number }} --split-debug-info=./debug_info --obfuscate
+          elif [ ${{github.event.inputs.build_type}} = "appbundle" ]; then
+            flutter build appbundle --build-name ${{ github.event.inputs.build_name }} --build-number ${{ github.event.inputs.build_number }} --split-debug-info=./debug_info --obfuscate
+          fi
+
+      - name: Compress debug symbols
+        working-directory: frontend/appflowy_flutter
+        run: |
+          tar -czf debug-symbols.tar.gz debug_info
+
+      - name: Rename APK
+        if: github.event.inputs.build_type == 'apk'
+        run: |
+          mv frontend/appflowy_flutter/build/app/outputs/flutter-apk/app-release.apk frontend/appflowy_flutter/build/app/outputs/flutter-apk/AppFlowy-${{ github.event.inputs.build_name }}-android.apk
+        shell: bash
+
+      - name: Upload APK
+        if: github.event.inputs.build_type == 'apk'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppFlowy-${{ github.event.inputs.build_name }}-android.apk
+          path: frontend/appflowy_flutter/build/app/outputs/flutter-apk/AppFlowy-${{ github.event.inputs.build_name }}-android.apk
+
+      - name: Rename AAB
+        if: github.event.inputs.build_type == 'appbundle'
+        run: |
+          mv frontend/appflowy_flutter/build/app/outputs/bundle/release/app-release.aab frontend/appflowy_flutter/build/app/outputs/bundle/release/AppFlowy-${{ github.event.inputs.build_name }}.aab
+        shell: bash
+
+      - name: Upload AAB
+        if: github.event.inputs.build_type  == 'appbundle'
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppFlowy-${{ github.event.inputs.build_name }}.aab
+          path: frontend/appflowy_flutter/build/app/outputs/bundle/release/AppFlowy-${{ github.event.inputs.build_name }}.aab
+
+      - name: Upload debug symbols
+        uses: actions/upload-artifact@v4
+        with:
+          name: AppFlowy-${{ github.event.inputs.build_name }}-debug-symbols
+          path: frontend/appflowy_flutter/debug-symbols.tar.gz
+
+      - name: Setup Sentry CLI
+        uses: mathieu-bour/setup-sentry-cli@v1
+        with:
+          version: latest
+          token: ${{ SECRETS.SENTRY_TOKEN }}
+          organization: appflowy
+          project: appflowy
+
+      - name: Upload symbols to Sentry
+        run: sentry-cli debug-files upload -o appflowy -p appflowy frontend/appflowy_flutter/debug_info
