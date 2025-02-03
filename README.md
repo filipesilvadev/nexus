@@ -48,7 +48,7 @@ Nexus is a private professional network application designed exclusively for chu
 
 1. Clone the repository:
 ```bash
-git clone https://github.com/yourusername/nexus.git
+git clone https://github.com/filipesilvadev/nexus
 cd nexus
 ```
 
@@ -106,7 +106,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 Project Maintainer - [@YourTwitter](https://twitter.com/yourtwitter)
 
-Project Link: [https://github.com/yourusername/nexus](https://github.com/yourusername/nexus)
+Project Link: [https://github.com/filipesilvadev/nexus](https://github.com/filipesilvadev/nexus)
 
 ---
 Built with ❤️ for the church community
